@@ -48,7 +48,23 @@ st.markdown(
             font-weight: 750 !important;
             margin-bottom: 0.25rem !important;
         }
-        h2, h3, p, label, span, div { color: #222222; }
+        h2, h3, p, label, span, div { color: #111827 !important; }
+        /* Make Streamlit select boxes print/export cleanly on a white dashboard */
+        div[data-testid="stSelectbox"] label, div[data-testid="stSelectbox"] p {
+            color: #111827 !important;
+            font-weight: 500 !important;
+        }
+        div[data-baseweb="select"] > div {
+            background-color: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #111827 !important;
+            border-radius: 4px !important;
+            min-height: 38px !important;
+        }
+        div[data-baseweb="select"] span, div[data-baseweb="select"] div {
+            color: #111827 !important;
+        }
+        svg { color: #111827 !important; }
         [data-testid="stMetric"] {
             background: #ffffff;
             border: 1px solid #e5e7eb;
@@ -209,11 +225,11 @@ SEGMENT_LABELS = {
 }
 
 SEGMENT_COLORS = {
-    "Standard": "#8A8A80",
-    "Promo-Hunter": "#C37713",
+    "Standard": "#6B6B5F",
+    "Promo-Hunter": "#C97A0B",
     "Loyal-Mid-Value": "#22A07A",
     "High-Value-At-Risk": "#D95B32",
-    "Champion": "#7D73D8",
+    "Champion": "#6F63D2",
 }
 
 
@@ -269,15 +285,15 @@ with left:
         labels={"customer_count": "Count of Customer ID", "customer_segment": "customer_segment"},
         height=310,
     )
-    fig1.update_traces(textposition="outside", cliponaxis=False)
+    fig1.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
     fig1.update_layout(
         showlegend=False,
         margin=dict(l=90, r=35, t=10, b=35),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        font=dict(color="#444", size=11),
-        xaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False),
-        yaxis=dict(title="customer_segment"),
+        font=dict(color="#111827", size=12),
+        xaxis=dict(showgrid=True, gridcolor="#d9d9d9", zeroline=False, title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
+        yaxis=dict(title="customer_segment", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
     )
     st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
 
@@ -299,15 +315,15 @@ with right:
         labels={"promo_dependency": "Average of promo_dependency", "customer_segment": "customer_segment"},
         height=310,
     )
-    fig2.update_traces(textposition="outside", cliponaxis=False)
+    fig2.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
     fig2.update_layout(
         showlegend=False,
         margin=dict(l=50, r=20, t=10, b=80),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        font=dict(color="#444", size=11),
-        yaxis=dict(range=[0, max(1.05, promo_plot["promo_dependency"].max() * 1.15)], showgrid=True, gridcolor="#eeeeee"),
-        xaxis=dict(tickangle=-35),
+        font=dict(color="#111827", size=12),
+        yaxis=dict(range=[0, max(1.05, promo_plot["promo_dependency"].max() * 1.15)], showgrid=True, gridcolor="#d9d9d9", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
+        xaxis=dict(tickangle=-35, title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
     )
     st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
@@ -339,7 +355,7 @@ with left2:
         margin=dict(l=0, r=0, t=0, b=0),
         geo=dict(bgcolor="white", lakecolor="#f7fbff"),
         paper_bgcolor="white",
-        font=dict(color="#444", size=10),
+        font=dict(color="#111827", size=11),
         coloraxis_showscale=False,
     )
     st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
@@ -381,15 +397,15 @@ with right2:
         labels={"value": "Average of Previous Purchases", "category": "Category"},
         height=330,
     )
-    fig4.update_traces(textposition="outside", cliponaxis=False)
+    fig4.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
     fig4.update_layout(
         legend=dict(orientation="h", y=1.13, x=0, title="Category Role"),
         margin=dict(l=85, r=35, t=30, b=40),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        font=dict(color="#444", size=11),
-        xaxis=dict(showgrid=True, gridcolor="#eeeeee"),
-        yaxis=dict(title="Category"),
+        font=dict(color="#111827", size=12),
+        xaxis=dict(showgrid=True, gridcolor="#d9d9d9", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
+        yaxis=dict(title="Category", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
     )
     st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
 
