@@ -34,7 +34,7 @@ def load_data():
 try:
     data = load_data()
 except FileNotFoundError:
-    st.error("⚠️ Data files not found. Run `python main_pipeline.py` first.")
+    st.error("Data files not found. Run `python main_pipeline.py` first.")
     st.stop()
 
 # ── KPI helper ─────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ def get_metric(df, key):
 metrics = data["metrics"]
 
 # ── Header ─────────────────────────────────────────────────────────────────
-st.title("🛍️ Customer Intelligence Dashboard")
+st.title("Customer Intelligence Dashboard")
 st.caption("Decoding Customer Value: A SQL-Driven Retention Strategy | Summer Projects '26")
 
 # ── KPI Row ────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ col_left, col_right = st.columns(2)
 # PANEL 1: Customer Value Pyramid
 # ─────────────────────────────────────────────────────────────────────
 with col_left:
-    st.subheader("📊 Panel 1: Customer Value Pyramid")
+    st.subheader("Panel 1: Customer Value Pyramid")
     st.caption("How is customer value distributed across the base?")
 
     pyr = data["pyramid"].copy()
@@ -100,7 +100,7 @@ with col_left:
     )
     st.plotly_chart(fig1, use_container_width=True)
 
-    with st.expander("📋 Data table"):
+    with st.expander("Data table"):
         st.dataframe(pyr[["value_tier","customer_count","pct_of_customers","pct_of_revenue",
                            "avg_spend","avg_retention"]].rename(columns={
             "value_tier":"Tier","customer_count":"Customers","pct_of_customers":"% Customers",
@@ -158,7 +158,7 @@ with col_right:
     # Quadrant annotations
     fig2.add_annotation(x=15, y=90, text="Brand Loyalists<br>Protect ✓", showarrow=False,
                         font=dict(color="#27AE60", size=10))
-    fig2.add_annotation(x=80, y=90, text="Promo-Dependent<br>Wean Off ⚠️", showarrow=False,
+    fig2.add_annotation(x=80, y=90, text="Promo-Dependent<br>Wean Off ", showarrow=False,
                         font=dict(color="#E67E22", size=10))
     fig2.add_annotation(x=15, y=10, text="Developing<br>Nurture →", showarrow=False,
                         font=dict(color="#3498DB", size=10))
@@ -166,7 +166,7 @@ with col_right:
                         font=dict(color="#7F8C8D", size=10))
 
     st.plotly_chart(fig2, use_container_width=True)
-    st.caption("⚠️ Note: Retention proxy is a composite engagement score, NOT true churn prediction (no timestamps in dataset)")
+    st.caption("Note: Retention proxy is a composite engagement score, NOT true churn prediction (no timestamps in dataset)")
 
 col_left2, col_right2 = st.columns(2)
 
@@ -174,7 +174,7 @@ col_left2, col_right2 = st.columns(2)
 # PANEL 3: Geographic Opportunity
 # ─────────────────────────────────────────────────────────────────────
 with col_left2:
-    st.subheader("🗺️ Panel 3: Geographic Opportunity")
+    st.subheader("Panel 3: Geographic Opportunity")
     st.caption("States with high spend, low promo dependency, and satisfied customers")
 
     geo = data["geo"].copy()
@@ -224,7 +224,7 @@ with col_left2:
 # PANEL 4: Category Funnel
 # ─────────────────────────────────────────────────────────────────────
 with col_right2:
-    st.subheader("🗂️ Panel 4: Category Funnel")
+    st.subheader("Panel 4: Category Funnel")
     st.caption("Which categories attract new buyers vs. retain established ones?")
 
     cf = data["cat_funnel"].copy()
