@@ -1,28 +1,30 @@
 """
-app.py — Power BI-style Founder Dashboard
-Run: streamlit run app.py
-Requires: pip install streamlit pandas plotly
+app.py
+Customer Value Intelligence Dashboard
 
-This version is optimized for clean PDF export/screenshots. It uses a light,
-Power BI-like one-page layout with slicers, four dashboard panels and summary
-KPIs. It reads the existing final project CSVs from data/dashboard/ and outputs/.
+Run with:
+streamlit run app.py
+
+Expected project folders:
+data/dashboard/*.csv
+outputs/final_metrics_summary.csv
+
+This version is optimized for PDF export and screenshots.
+It uses a white background, clean text, visible panel borders and data labels.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
+import re
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# -----------------------------------------------------------------------------
-# Page config and visual style
-# -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Customer Value Intelligence: D2C Fashion Brand",
+    page_title="Customer Value Intelligence Dashboard",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -30,415 +32,308 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        /* Force a clean Power BI-like light canvas even if Streamlit theme is dark */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
             background: #ffffff !important;
-            color: #222222 !important;
+            color: #111827 !important;
         }
-        [data-testid="stToolbar"], #MainMenu, footer { visibility: hidden; height: 0%; }
+        [data-testid="stToolbar"], #MainMenu, footer {
+            visibility: hidden;
+            height: 0%;
+        }
         .block-container {
-            padding-top: 1.2rem !important;
+            padding-top: 1.0rem !important;
             padding-bottom: 0.5rem !important;
-            max-width: 1240px !important;
+            max-width: 1260px !important;
         }
         h1 {
             text-align: center;
-            color: #222222 !important;
+            color: #111827 !important;
             font-size: 30px !important;
-            font-weight: 750 !important;
-            margin-bottom: 0.25rem !important;
+            font-weight: 760 !important;
+            margin-bottom: 0.1rem !important;
         }
-        h2, h3, p, label, span, div { color: #111827 !important; }
-        /* Make Streamlit select boxes print/export cleanly on a white dashboard */
-        div[data-testid="stSelectbox"] label, div[data-testid="stSelectbox"] p {
-            color: #111827 !important;
-            font-weight: 500 !important;
-        }
-        div[data-baseweb="select"] > div {
-            background-color: #ffffff !important;
-            border: 1px solid #d1d5db !important;
-            color: #111827 !important;
-            border-radius: 4px !important;
-            min-height: 38px !important;
-        }
-        div[data-baseweb="select"] span, div[data-baseweb="select"] div {
+        h2, h3, p, label, span, div {
             color: #111827 !important;
         }
-        svg { color: #111827 !important; }
         [data-testid="stMetric"] {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 0.55rem 0.7rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 8px !important;
+            padding: 0.55rem 0.70rem !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
         }
         [data-testid="stMetricLabel"] p {
             font-size: 12px !important;
-            color: #555555 !important;
+            color: #4b5563 !important;
         }
         [data-testid="stMetricValue"] {
             font-size: 21px !important;
-            color: #222222 !important;
+            color: #111827 !important;
+        }
+        .subtitle {
+            text-align: center;
+            color: #4b5563 !important;
+            font-size: 13px;
+            margin-bottom: 0.75rem;
+        }
+        .panel-card {
+            border: 2px solid #1f4e79;
+            border-radius: 12px;
+            padding: 12px 14px 8px 14px;
+            margin: 8px 0 14px 0;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(31,78,121,0.12);
         }
         .panel-title {
-            font-size: 17px;
-            font-weight: 700;
-            color: #333333;
-            margin-top: 0.2rem;
-            margin-bottom: 0.25rem;
+            font-size: 18px;
+            font-weight: 750;
+            color: #1f4e79 !important;
+            margin-bottom: 2px;
+        }
+        .panel-note {
+            font-size: 12px;
+            color: #6b7280 !important;
+            margin-bottom: 8px;
         }
         .small-note {
-            color: #666666;
-            font-size: 12px;
-            margin-top: -0.3rem;
-            margin-bottom: 0.25rem;
+            font-size: 11px;
+            color: #6b7280 !important;
+            text-align: center;
+            margin-top: 2px;
         }
-        .css-1n76uvr, .css-ocqkz7 { gap: 1.4rem; }
-        div[data-testid="stSelectbox"] label { font-size: 12px !important; }
-        div[data-testid="stDataFrame"] { border: 1px solid #e5e7eb; border-radius: 6px; }
-        @media print {
-            .block-container { padding: 0.2rem 0.5rem !important; max-width: 100% !important; }
-            [data-testid="stToolbar"], #MainMenu, footer, header { display: none !important; }
-            section.main > div { padding-top: 0 !important; }
+        div[data-testid="stDataFrame"] {
+            background: #ffffff !important;
+            color: #111827 !important;
         }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# -----------------------------------------------------------------------------
-# Data utilities
-# -----------------------------------------------------------------------------
-ROOT = Path(".")
-DASHBOARD_DIR = ROOT / "data" / "dashboard"
-OUTPUT_DIR = ROOT / "outputs"
-FEATURES_PATH = ROOT / "data" / "features" / "customer_features.csv"
-RAW_PATH = ROOT / "data" / "raw" / "shopping_trends.csv"
+
+def clean_text(value: object) -> str:
+    """Return display safe text without emojis, hyphens or long dashes."""
+    text = str(value)
+    text = re.sub(r"[\U00010000-\U0010ffff]", "", text)
+    text = text.replace("-", " ").replace("–", " ").replace("—", " ")
+    text = text.replace("|", " ")
+    text = " ".join(text.split())
+    return text
 
 
-def read_csv_if_exists(path: Path) -> pd.DataFrame | None:
-    if path.exists():
-        return pd.read_csv(path)
+def short_segment_label(value: object) -> str:
+    mapping = {
+        "Loyal High-Value": "Loyal High Value",
+        "High-Value Promo-Dependent": "Promo Dependent",
+        "Organic Mid-Value": "Organic Mid Value",
+        "At-Risk Dissatisfied": "At Risk",
+        "Low-Repeat Bargain Hunter": "Bargain Hunter",
+        "Low-Value Low-Engagement": "Low Engagement",
+    }
+    return clean_text(mapping.get(str(value), value))
+
+
+def first_existing_path(paths: list[str]) -> Path | None:
+    for path in paths:
+        p = Path(path)
+        if p.exists():
+            return p
     return None
 
 
-@st.cache_data(show_spinner=False)
-def load_data() -> dict[str, pd.DataFrame | None]:
-    data = {
-        "pyramid": read_csv_if_exists(DASHBOARD_DIR / "customer_pyramid.csv"),
-        "promo_ret": read_csv_if_exists(DASHBOARD_DIR / "promo_dependency_retention.csv"),
-        "geo": read_csv_if_exists(DASHBOARD_DIR / "geography_opportunity.csv"),
-        "cat_funnel": read_csv_if_exists(DASHBOARD_DIR / "category_funnel.csv"),
-        "cat_sum": read_csv_if_exists(DASHBOARD_DIR / "category_summary.csv"),
-        "seg_sum": read_csv_if_exists(DASHBOARD_DIR / "segment_summary.csv"),
-        "icp": read_csv_if_exists(DASHBOARD_DIR / "ideal_customer_profile.csv"),
-        "metrics": read_csv_if_exists(OUTPUT_DIR / "final_metrics_summary.csv"),
-        "features": read_csv_if_exists(FEATURES_PATH),
-        "raw": read_csv_if_exists(RAW_PATH),
+@st.cache_data
+def load_data() -> dict[str, pd.DataFrame]:
+    dashboard_dir = first_existing_path([
+        "data/dashboard",
+        "dashboard/dashboard_ready_csvs",
+        "customer_value_final_submission/data/dashboard",
+        "/mnt/data/customer_value_final_submission/data/dashboard",
+    ])
+    metrics_path = first_existing_path([
+        "outputs/final_metrics_summary.csv",
+        "customer_value_final_submission/outputs/final_metrics_summary.csv",
+        "/mnt/data/customer_value_final_submission/outputs/final_metrics_summary.csv",
+    ])
+
+    if dashboard_dir is None:
+        raise FileNotFoundError("Dashboard CSV folder was not found.")
+    if metrics_path is None:
+        raise FileNotFoundError("Final metrics summary file was not found.")
+
+    return {
+        "pyramid": pd.read_csv(dashboard_dir / "customer_pyramid.csv"),
+        "promo_ret": pd.read_csv(dashboard_dir / "promo_dependency_retention.csv"),
+        "geo": pd.read_csv(dashboard_dir / "geography_opportunity.csv"),
+        "cat_funnel": pd.read_csv(dashboard_dir / "category_funnel.csv"),
+        "cat_sum": pd.read_csv(dashboard_dir / "category_summary.csv"),
+        "seg_sum": pd.read_csv(dashboard_dir / "segment_summary.csv"),
+        "icp": pd.read_csv(dashboard_dir / "ideal_customer_profile.csv"),
+        "metrics": pd.read_csv(metrics_path),
     }
-    required = ["pyramid", "promo_ret", "geo", "cat_funnel", "seg_sum", "metrics"]
-    missing = [name for name in required if data[name] is None]
-    if missing:
-        st.error(
-            "Required dashboard CSVs are missing: " + ", ".join(missing) +
-            ". Run `python main_pipeline.py` first from the project root."
-        )
-        st.stop()
-    return data
 
 
-data = load_data()
+try:
+    data = load_data()
+except FileNotFoundError as exc:
+    st.error(f"Data files not found. Run python main_pipeline.py first. {exc}")
+    st.stop()
 
 
-def get_metric(metrics: pd.DataFrame, key: str, fallback: str = "N/A") -> str:
-    if metrics is None or "metric" not in metrics.columns or "value" not in metrics.columns:
-        return fallback
-    row = metrics.loc[metrics["metric"].astype(str).str.lower() == key.lower(), "value"]
-    return str(row.iloc[0]) if not row.empty else fallback
+def metric_value(df: pd.DataFrame, key: str) -> str:
+    if "metric" not in df.columns or "value" not in df.columns:
+        return "Not available"
+    row = df[df["metric"] == key]
+    return str(row["value"].iloc[0]) if not row.empty else "Not available"
 
 
-def clean_colnames(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    out.columns = [str(c).strip().lower().replace(" ", "_") for c in out.columns]
-    return out
+def plot_layout(fig: go.Figure, height: int = 345) -> go.Figure:
+    fig.update_layout(
+        height=height,
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#111827", size=11),
+        margin=dict(l=20, r=18, t=20, b=35),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="left", x=0),
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="#e5e7eb", zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor="#e5e7eb", zeroline=False)
+    return fig
 
-
-# -----------------------------------------------------------------------------
-# Optional slicers from customer_features.csv
-# -----------------------------------------------------------------------------
-features = data.get("features")
-if features is not None:
-    features = clean_colnames(features)
-
-# Header and slicers: styled to mimic the uploaded Power BI PDF
-st.title("Customer Value Intelligence: D2C Fashion Brand")
-
-filter_left, filter_right = st.columns([1, 1])
-selected_season = "All"
-selected_gender = "All"
-
-with filter_left:
-    if features is not None and "season" in features.columns:
-        seasons = ["All"] + sorted(features["season"].dropna().astype(str).unique().tolist())
-        selected_season = st.selectbox("Season", seasons, index=0)
-    else:
-        selected_season = st.selectbox("Season", ["All"], index=0)
-
-with filter_right:
-    if features is not None and "gender" in features.columns:
-        genders = ["All"] + sorted(features["gender"].dropna().astype(str).unique().tolist())
-        selected_gender = st.selectbox("Gender", genders, index=0)
-    else:
-        selected_gender = st.selectbox("Gender", ["All"], index=0)
-
-# Filter raw feature-level data when possible; otherwise use dashboard summaries.
-filtered_features = features.copy() if features is not None else None
-if filtered_features is not None:
-    if selected_season != "All" and "season" in filtered_features.columns:
-        filtered_features = filtered_features[filtered_features["season"].astype(str) == selected_season]
-    if selected_gender != "All" and "gender" in filtered_features.columns:
-        filtered_features = filtered_features[filtered_features["gender"].astype(str) == selected_gender]
 
 metrics = data["metrics"]
 
-# -----------------------------------------------------------------------------
-# KPI cards
-# -----------------------------------------------------------------------------
-kpi_cols = st.columns(6)
-kpi_cols[0].metric("Total Customers", get_metric(metrics, "Total Customers"))
-kpi_cols[1].metric("Est. Revenue", get_metric(metrics, "Total Estimated Revenue"))
-kpi_cols[2].metric("Organic Revenue", get_metric(metrics, "Organic Revenue %"))
-kpi_cols[3].metric("Promo-Dependent Rev", get_metric(metrics, "Promo-Dependent Revenue %"))
-kpi_cols[4].metric("Loyal High-Value", get_metric(metrics, "Loyal High-Value Customers"))
-kpi_cols[5].metric("At-Risk Dissatisfied", get_metric(metrics, "At-Risk Dissatisfied"))
-
-# -----------------------------------------------------------------------------
-# Derived plot data
-# -----------------------------------------------------------------------------
-SEGMENT_LABELS = {
-    "Loyal High-Value": "Champion",
-    "High-Value Promo-Dependent": "Promo-Hunter",
-    "Organic Mid-Value": "Loyal-Mid-Value",
-    "At-Risk Dissatisfied": "High-Value-At-Risk",
-    "Low-Repeat Bargain Hunter": "Promo-Hunter",
-    "Low-Value Low-Engagement": "Standard",
-}
-
-SEGMENT_COLORS = {
-    "Standard": "#6B6B5F",
-    "Promo-Hunter": "#C97A0B",
-    "Loyal-Mid-Value": "#22A07A",
-    "High-Value-At-Risk": "#D95B32",
-    "Champion": "#6F63D2",
-}
-
-
-def build_segment_summary() -> pd.DataFrame:
-    """Build Power BI-like segment summary from feature-level data if available."""
-    if filtered_features is not None and "final_segment" in filtered_features.columns:
-        df = filtered_features.copy()
-        if df.empty:
-            return pd.DataFrame(columns=["customer_segment", "customer_count", "promo_dependency"])
-        amount_col = "purchase_amount_usd" if "purchase_amount_usd" in df.columns else "purchase_amount"
-        promo_col = "promo_dependency_score" if "promo_dependency_score" in df.columns else "promo_dependency"
-        seg = df["final_segment"].map(SEGMENT_LABELS).fillna(df["final_segment"].astype(str))
-        temp = df.assign(customer_segment=seg)
-        summary = temp.groupby("customer_segment", as_index=False).agg(
-            customer_count=("customer_segment", "size"),
-            promo_dependency=(promo_col, "mean") if promo_col in temp.columns else ("customer_segment", "size"),
-            avg_spend=(amount_col, "mean") if amount_col in temp.columns else ("customer_segment", "size"),
-        )
-        return summary
-
-    ss = data["seg_sum"].copy()
-    ss["customer_segment"] = ss["final_segment"].map(SEGMENT_LABELS).fillna(ss["final_segment"])
-    return ss.groupby("customer_segment", as_index=False).agg(
-        customer_count=("customer_count", "sum"),
-        promo_dependency=("avg_promo_dependency", "mean"),
-        avg_spend=("avg_purchase_amount", "mean"),
-    )
-
-
-seg_plot = build_segment_summary()
-segment_order = ["Standard", "Promo-Hunter", "Loyal-Mid-Value", "High-Value-At-Risk", "Champion"]
-seg_plot["segment_order"] = seg_plot["customer_segment"].apply(
-    lambda x: segment_order.index(x) if x in segment_order else 999
+st.title("Customer Value Intelligence Dashboard")
+st.markdown(
+    "<div class='subtitle'>Decoding Customer Value  SQL Driven Retention Strategy  Summer Projects 26</div>",
+    unsafe_allow_html=True,
 )
-seg_plot = seg_plot.sort_values(["segment_order", "customer_count"], ascending=[True, False])
 
-# -----------------------------------------------------------------------------
-# Four-panel dashboard layout
-# -----------------------------------------------------------------------------
-left, right = st.columns(2)
+k1, k2, k3, k4, k5, k6 = st.columns(6)
+k1.metric("Total Customers", metric_value(metrics, "Total Customers"))
+k2.metric("Estimated Revenue", metric_value(metrics, "Total Estimated Revenue"))
+k3.metric("Organic Revenue", metric_value(metrics, "Organic Revenue %"))
+k4.metric("Promo Dependent Revenue", metric_value(metrics, "Promo-Dependent Revenue %"))
+k5.metric("Loyal High Value", metric_value(metrics, "Loyal High-Value Customers"))
+k6.metric("At Risk Dissatisfied", metric_value(metrics, "At-Risk Dissatisfied"))
 
-# Panel 1 ---------------------------------------------------------------------
+left, right = st.columns(2, gap="large")
+
 with left:
-    st.markdown('<div class="panel-title">Customer Pyramid- Value Distribution</div>', unsafe_allow_html=True)
-    fig1 = px.bar(
-        seg_plot.sort_values("customer_count", ascending=True),
-        y="customer_segment",
-        x="customer_count",
-        orientation="h",
-        text="customer_count",
-        color="customer_segment",
-        color_discrete_map=SEGMENT_COLORS,
-        labels={"customer_count": "Count of Customer ID", "customer_segment": "customer_segment"},
-        height=310,
-    )
-    fig1.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
-    fig1.update_layout(
-        showlegend=False,
-        margin=dict(l=90, r=35, t=10, b=35),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(color="#111827", size=12),
-        xaxis=dict(showgrid=True, gridcolor="#d9d9d9", zeroline=False, title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
-        yaxis=dict(title="customer_segment", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
-    )
-    st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>Panel 1 Customer Value Pyramid</div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-note'>Value distribution across the customer base with revenue contribution.</div>", unsafe_allow_html=True)
 
-# Panel 2 ---------------------------------------------------------------------
+    pyr = data["pyramid"].copy()
+    if "value_tier" in pyr.columns:
+        pyr["value_tier_clean"] = pyr["value_tier"].map(clean_text)
+        order = ["High", "Medium", "Low"]
+        pyr = pyr.set_index("value_tier").reindex(order).reset_index()
+        pyr["value_tier_clean"] = pyr["value_tier"].map(clean_text)
+
+    fig1 = go.Figure()
+    fig1.add_bar(
+        name="Customers Percent",
+        x=pyr["value_tier_clean"],
+        y=pyr["pct_of_customers"],
+        marker_color="#1f4e79",
+        text=pyr["pct_of_customers"].map(lambda x: f"{x:.1f}%"),
+        textposition="outside",
+        cliponaxis=False,
+    )
+    fig1.add_bar(
+        name="Revenue Percent",
+        x=pyr["value_tier_clean"],
+        y=pyr["pct_of_revenue"],
+        marker_color="#70ad47",
+        text=pyr["pct_of_revenue"].map(lambda x: f"{x:.1f}%"),
+        textposition="outside",
+        cliponaxis=False,
+    )
+    fig1.update_layout(barmode="group", yaxis_range=[0, max(pyr["pct_of_revenue"].max(), pyr["pct_of_customers"].max()) + 12])
+    fig1.update_xaxes(title="Value Tier")
+    fig1.update_yaxes(title="Percentage")
+    st.plotly_chart(plot_layout(fig1, 330), use_container_width=True, config={"displayModeBar": False})
+    st.markdown("</div>", unsafe_allow_html=True)
+
 with right:
-    st.markdown('<div class="panel-title">Promo Dependency by Segment</div>', unsafe_allow_html=True)
-    promo_plot = seg_plot.copy()
-    # If the stored score is 0-100, convert to 0-1 to match Power BI-style target PDF.
-    if promo_plot["promo_dependency"].max() > 1.5:
-        promo_plot["promo_dependency"] = promo_plot["promo_dependency"] / 100.0
-    promo_plot = promo_plot.sort_values("promo_dependency", ascending=False)
-    fig2 = px.bar(
-        promo_plot,
-        x="customer_segment",
-        y="promo_dependency",
-        text=promo_plot["promo_dependency"].map(lambda x: f"{x:.2f}"),
-        color="customer_segment",
-        color_discrete_map=SEGMENT_COLORS,
-        labels={"promo_dependency": "Average of promo_dependency", "customer_segment": "customer_segment"},
-        height=310,
-    )
-    fig2.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
-    fig2.update_layout(
-        showlegend=False,
-        margin=dict(l=50, r=20, t=10, b=80),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(color="#111827", size=12),
-        yaxis=dict(range=[0, max(1.05, promo_plot["promo_dependency"].max() * 1.15)], showgrid=True, gridcolor="#d9d9d9", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
-        xaxis=dict(tickangle=-35, title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
-    )
-    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>Panel 2 Promo Dependency and Retention Signal</div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-note'>Segment level view of discount reliance and repeat purchase signal.</div>", unsafe_allow_html=True)
 
-left2, right2 = st.columns(2)
-
-# Panel 3 ---------------------------------------------------------------------
-with left2:
-    st.markdown('<div class="panel-title">Geographic Opportunity: Spend vs Promo Dependency</div>', unsafe_allow_html=True)
-    geo = data["geo"].copy()
-    if "opportunity_score" in geo.columns:
-        color_col = "opportunity_score"
-    elif "geo_opportunity" in geo.columns:
-        color_col = "geo_opportunity"
-    else:
-        color_col = geo.columns[-1]
-
-    fig3 = px.choropleth(
-        geo,
-        locations="location",
-        locationmode="USA-states",
-        color=color_col,
-        scope="usa",
-        color_continuous_scale=["#F4A261", "#A8D5BA", "#2A9D8F"],
-        hover_name="location",
-        hover_data=[c for c in ["geo_customer_count", "geo_avg_spend", "geo_promo_rate", "geo_opportunity"] if c in geo.columns],
-        height=330,
-    )
-    fig3.update_layout(
-        margin=dict(l=0, r=0, t=0, b=0),
-        geo=dict(bgcolor="white", lakecolor="#f7fbff"),
-        paper_bgcolor="white",
-        font=dict(color="#111827", size=11),
-        coloraxis_showscale=False,
-    )
-    st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
-
-# Panel 4 ---------------------------------------------------------------------
-with right2:
-    st.markdown('<div class="panel-title">Category Funnel: Entry Point vs Retention</div>', unsafe_allow_html=True)
-    cat = data["cat_funnel"].copy()
-
-    # Build an entry vs retention view, similar to the Power BI PDF.
-    if {"category", "purchase_history_tier", "customer_count"}.issubset(cat.columns):
-        entry = cat[cat["purchase_history_tier"].astype(str).str.contains("New", case=False, na=False)]
-        retention = cat[cat["purchase_history_tier"].astype(str).str.contains("Established", case=False, na=False)]
-        entry_view = entry.groupby("category", as_index=False).agg(value=("customer_count", "sum"))
-        entry_view["Category Role"] = "Entry-Point Category"
-        retention_view = retention.groupby("category", as_index=False).agg(value=("customer_count", "sum"))
-        retention_view["Category Role"] = "Retention Category"
-        cat_view = pd.concat([entry_view, retention_view], ignore_index=True)
-    else:
-        cs = data["cat_sum"].copy()
-        cat_view = pd.DataFrame({
-            "category": cs["category"],
-            "value": cs["avg_prev_purchases"],
-            "Category Role": "Retention Category",
-        })
-
-    fig4 = px.bar(
-        cat_view,
-        y="category",
-        x="value",
-        color="Category Role",
-        orientation="h",
-        barmode="group",
-        text=cat_view["value"].map(lambda x: f"{x:.0f}" if x >= 100 else f"{x:.2f}"),
-        color_discrete_map={
-            "Entry-Point Category": "#D95B32",
-            "Retention Category": "#7D73D8",
+    pr = data["promo_ret"].copy()
+    pr["segment_label"] = pr["final_segment"].map(short_segment_label)
+    fig2 = px.scatter(
+        pr,
+        x="avg_promo_dependency",
+        y="avg_retention_proxy",
+        size="customer_count",
+        color="segment_label",
+        text="segment_label",
+        size_max=48,
+        color_discrete_sequence=["#1f4e79", "#ed7d31", "#70ad47", "#c00000", "#7f7f7f", "#a5a5a5"],
+        labels={
+            "avg_promo_dependency": "Promo Dependency Score",
+            "avg_retention_proxy": "Retention Signal Score",
+            "segment_label": "Segment",
         },
-        labels={"value": "Average of Previous Purchases", "category": "Category"},
-        height=330,
     )
-    fig4.update_traces(textposition="outside", cliponaxis=False, textfont=dict(color="#111827", size=11))
-    fig4.update_layout(
-        legend=dict(orientation="h", y=1.13, x=0, title="Category Role"),
-        margin=dict(l=85, r=35, t=30, b=40),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(color="#111827", size=12),
-        xaxis=dict(showgrid=True, gridcolor="#d9d9d9", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
-        yaxis=dict(title="Category", title_font=dict(color="#111827", size=12), tickfont=dict(color="#111827", size=11), linecolor="#9ca3af"),
+    fig2.update_traces(textposition="top center", textfont=dict(size=10), marker=dict(line=dict(width=1, color="#ffffff")))
+    fig2.add_vline(x=50, line_dash="dot", line_color="#6b7280")
+    fig2.add_hline(y=50, line_dash="dot", line_color="#6b7280")
+    fig2.update_layout(showlegend=False, xaxis_range=[0, 100], yaxis_range=[0, 100])
+    st.plotly_chart(plot_layout(fig2, 330), use_container_width=True, config={"displayModeBar": False})
+    st.markdown("<div class='small-note'>Retention signal is a proxy because the dataset has no timestamps.</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+left2, right2 = st.columns(2, gap="large")
+
+with left2:
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>Panel 3 Geographic Opportunity</div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-note'>Top states ranked by spend, satisfaction, low promo reliance and high value share.</div>", unsafe_allow_html=True)
+
+    geo = data["geo"].copy().sort_values("opportunity_score", ascending=False).head(10)
+    geo["location_clean"] = geo["location"].map(clean_text)
+    geo = geo.sort_values("opportunity_score", ascending=True)
+    fig3 = px.bar(
+        geo,
+        x="opportunity_score",
+        y="location_clean",
+        orientation="h",
+        text="opportunity_score",
+        color="geo_opportunity",
+        color_discrete_sequence=["#1f4e79", "#70ad47", "#ed7d31"],
+        labels={"opportunity_score": "Opportunity Score", "location_clean": "State", "geo_opportunity": "Opportunity Level"},
+        hover_data=["geo_customer_count", "geo_avg_spend", "geo_promo_rate", "geo_avg_rating"],
     )
-    st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
+    fig3.update_traces(textposition="outside", cliponaxis=False)
+    fig3.update_layout(showlegend=False, xaxis_range=[0, max(geo["opportunity_score"].max() + 1, 5)])
+    st.plotly_chart(plot_layout(fig3, 330), use_container_width=True, config={"displayModeBar": False})
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# Compact supporting tables, included below the four-panel dashboard.
-# -----------------------------------------------------------------------------
-with st.expander("Full Segment Summary Table", expanded=False):
-    ss = data["seg_sum"].copy()
-    show_cols = [
-        c for c in [
-            "final_segment", "customer_count", "revenue_share_pct", "avg_purchase_amount",
-            "avg_total_spend_est", "avg_promo_dependency", "avg_retention_proxy",
-            "avg_review_rating", "pct_discount_applied", "segment_definition",
-        ] if c in ss.columns
-    ]
-    st.dataframe(ss[show_cols], use_container_width=True, hide_index=True)
+with right2:
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>Panel 4 Category Funnel</div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-note'>Categories compared by new, developing and established purchase history groups.</div>", unsafe_allow_html=True)
 
-with st.expander("Ideal Customer Profile", expanded=False):
-    icp = data.get("icp")
-    if icp is not None:
-        icp = clean_colnames(icp)
-        rename_map = {
-            "attribute": "Attribute",
-            "value": "Value",
-            "business_implication": "Business Implication",
-            "business_implications": "Business Implication",
-            "implication": "Business Implication",
-        }
-        icp_display = icp.rename(columns=rename_map)
-        required = ["Attribute", "Value", "Business Implication"]
-        if set(required).issubset(icp_display.columns):
-            st.dataframe(icp_display[required], use_container_width=True, hide_index=True)
-        else:
-            st.dataframe(icp_display, use_container_width=True, hide_index=True)
+    cf = data["cat_funnel"].copy()
+    cf["category_clean"] = cf["category"].map(clean_text)
+    history_order = ["New (0-5)", "Developing (6-15)", "Established (16+)"]
+    cf["history_label"] = pd.Categorical(cf["purchase_history_tier"].map(clean_text), categories=[clean_text(x) for x in history_order], ordered=True)
+    fig4 = px.bar(
+        cf,
+        x="category_clean",
+        y="customer_count",
+        color="history_label",
+        barmode="group",
+        text="customer_count",
+        color_discrete_sequence=["#9dc3e6", "#4472c4", "#1f4e79"],
+        labels={"category_clean": "Category", "customer_count": "Customers", "history_label": "Purchase History"},
+        hover_data=["avg_spend", "avg_promo_dep", "avg_rating"],
+    )
+    fig4.update_traces(textposition="outside", cliponaxis=False)
+    fig4.update_yaxes(title="Number of Customers")
+    st.plotly_chart(plot_layout(fig4, 330), use_container_width=True, config={"displayModeBar": False})
+    st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Dashboard powered by data/dashboard/*.csv | Run python main_pipeline.py to refresh")
+st.markdown("<div class='small-note'>Dashboard powered by data dashboard CSV files. Run python main_pipeline.py to refresh.</div>", unsafe_allow_html=True)
