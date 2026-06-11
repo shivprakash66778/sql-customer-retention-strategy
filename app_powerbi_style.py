@@ -608,11 +608,39 @@ with st.expander("Full Segment Summary Table", expanded=False):
 
 with st.expander("Ideal Customer Profile", expanded=False):
     icp = data["icp"]
-    st.dataframe(
-        icp[["Attribute", "Value", "Business_Implication"]].rename(
-            columns={"Business_Implication": "Business Implication"}
-        ),
-        hide_index=True, use_container_width=True,
+    st.dataframe(# Ideal Customer Profile table
+            icp = data["icp"].copy()
+            
+            # Standardize column names
+            icp.columns = (
+                icp.columns
+                .str.strip()
+                .str.lower()
+                .str.replace(" ", "_")
+                .str.replace("-", "_")
+            )
+            
+            # Rename to display format
+            icp = icp.rename(columns={
+                "attribute": "Attribute",
+                "value": "Value",
+                "business_implication": "Business Implication",
+                "business_implications": "Business Implication",
+                "implication": "Business Implication"
+            })
+            
+            required_cols = ["Attribute", "Value", "Business Implication"]
+            
+            if all(col in icp.columns for col in required_cols):
+                st.dataframe(
+                    icp[required_cols],
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.warning("Ideal Customer Profile columns do not match expected names. Showing available table.")
+                st.write("Available columns:", list(icp.columns))
+                st.dataframe(icp, use_container_width=True, hide_index=True)
     )
 
 st.markdown(
