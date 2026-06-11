@@ -287,7 +287,37 @@ with st.expander("📋 Full Segment Summary Table"):
 
 with st.expander("👤 Ideal Customer Profile"):
     icp = data["icp"]
-    st.dataframe(icp[["Attribute","Value","Business_Implication"]].rename(columns={
-        "Business_Implication":"Business Implication"}), hide_index=True)
+    # ---------------- Ideal Customer Profile ----------------
+    st.subheader("👤 Ideal Customer Profile")
+    
+    # Standardize column names to avoid Streamlit Cloud KeyError
+    icp.columns = (
+        icp.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+    )
+    
+    # Rename expected columns if present
+    rename_map = {
+        "attribute": "Attribute",
+        "value": "Value",
+        "business_implication": "Business Implication",
+        "business_implications": "Business Implication",
+        "implication": "Business Implication"
+    }
+    
+    icp_display = icp.rename(columns=rename_map)
+    
+    required_cols = ["Attribute", "Value", "Business Implication"]
+    
+    available_cols = [col for col in required_cols if col in icp_display.columns]
+    
+    if len(available_cols) == 3:
+        st.dataframe(icp_display[required_cols], use_container_width=True)
+    else:
+        st.warning("Ideal Customer Profile table columns are different from expected. Showing available data instead.")
+        st.write("Available columns:", list(icp_display.columns))
+        st.dataframe(icp_display, use_container_width=True)
 
 st.caption("Dashboard powered by data/dashboard/*.csv | Run python main_pipeline.py to refresh")
