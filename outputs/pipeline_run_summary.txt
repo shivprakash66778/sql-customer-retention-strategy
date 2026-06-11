@@ -1,0 +1,53 @@
+Pipeline Run: 2026-06-11 10:23:24
+
+DATASET OVERVIEW
+  Total customers: 3,900
+  Raw columns: 19
+  Engineered features: 51
+
+LOYALTY ANALYSIS
+  Definition 1 (Behavioral): consistency score 4/4
+  Definition 2 (Commercial): consistency score 4/4
+  Selected: Behavioral Loyalty (Definition 1)
+
+CUSTOMER SEGMENTS
+  Low-Value Low-Engagement             1303 customers | 17.5% revenue
+  Loyal High-Value                      599 customers | 28.6% revenue
+  At-Risk Dissatisfied                  567 customers | 18.9% revenue
+  Organic Mid-Value                     557 customers | 12.1% revenue
+  High-Value Promo-Dependent            450 customers | 21.2% revenue
+  Low-Repeat Bargain Hunter             424 customers | 1.7% revenue
+
+REVENUE BREAKDOWN
+  Total estimated revenue: $6,152,801
+  Organic (no promo): $3,492,826 (56.8%)
+  Promo-dependent: $2,659,975 (43.2%)
+
+GEOGRAPHY
+  High Opportunity states: 7
+  Medium Opportunity states: 33
+
+CATEGORY ROLES
+  Accessories     → Neutral Category
+  Clothing        → Entry Category
+  Footwear        → Entry Category
+  Outerwear       → Entry Category
+
+FILES CREATED
+  data/cleaned/cleaned_customer_data.csv
+  data/features/customer_features.csv
+  data/dashboard/category_funnel.csv
+  data/dashboard/category_summary.csv
+  data/dashboard/customer_pyramid.csv
+  data/dashboard/data_dictionary.csv
+  data/dashboard/demographics_analysis.csv
+  data/dashboard/geography_opportunity.csv
+  data/dashboard/ideal_customer_profile.csv
+  data/dashboard/loyalty_definition_comparison.csv
+  data/dashboard/payment_analysis.csv
+  data/dashboard/promo_dependency_retention.csv
+  data/dashboard/segment_summary.csv
+  sql/schema.sql
+  sql/analysis_queries.sql
+  sql/customer_intelligence.db
+  outputs/final_metrics_summary.csv

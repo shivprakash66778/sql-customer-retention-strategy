@@ -1,0 +1,7 @@
+final_segment,customer_count,avg_purchase_amount,avg_total_spend_est,avg_previous_purchases,avg_review_rating,avg_promo_dependency,avg_retention_proxy,pct_discount_applied,pct_promo_code_used,pct_subscribed,avg_age,avg_loyalty_score,revenue_share_pct,segment_definition
+At-Risk Dissatisfied,567,64.563,2051.03,31.947,2.782,43.905,40.796,0.459,0.459,0.268,43.944,0.439,18.9,"satisfaction_tier=Dissatisfied + value_tier in (High, Medium)"
+High-Value Promo-Dependent,450,76.264,2897.884,37.636,4.022,84.946,54.663,1.0,1.0,0.662,45.391,0.515,21.2,"value_tier=High + promo_segment in (Promo Dependent, Bargain Hunter)"
+Low-Repeat Bargain Hunter,424,60.594,248.759,3.064,3.788,50.85,27.404,0.401,0.401,0.224,42.981,0.248,1.7,"value_tier=Low + promo_segment in (Promo Dependent, Bargain Hunter) + previous_purchases<=5"
+Low-Value Low-Engagement,1303,45.784,826.343,19.156,3.814,61.271,39.307,0.612,0.612,0.39,44.016,0.34,17.5,Remaining customers (catch-all)
+Loyal High-Value,599,76.28,2936.755,37.938,4.065,4.825,56.198,0.0,0.0,0.0,43.576,0.723,28.6,"value_tier=High + High Loyalty + promo_segment in (Organic Loyalist, Selective Promo User)"
+Organic Mid-Value,557,55.86,1336.632,26.637,3.998,9.345,47.332,0.0,0.0,0.0,44.607,0.554,12.1,"value_tier=Medium + promo_segment in (Organic Loyalist, Selective Promo User)"

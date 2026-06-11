@@ -1,0 +1,7 @@
+definition,tier,n,avg_revenue,avg_promo_dependency,avg_satisfaction,avg_prev_purchases,avg_retention_proxy,consistency_score,is_selected
+Behavioral Loyalty (Definition 1),High Loyalty,1326,2564.06,18.09,3.99,37.81,55.51,4/4,YES
+Behavioral Loyalty (Definition 1),Medium Loyalty,1287,1381.22,41.87,3.77,24.42,43.17,4/4,YES
+Behavioral Loyalty (Definition 1),Low Loyalty,1287,757.75,73.61,3.49,13.45,32.19,4/4,YES
+Commercial Loyalty (Definition 2),High Loyalty,1326,2578.26,42.29,3.78,31.76,53.64,4/4,NO
+Commercial Loyalty (Definition 2),Medium Loyalty,1287,1343.81,42.85,3.74,23.23,42.08,4/4,NO
+Commercial Loyalty (Definition 2),Low Loyalty,1287,780.53,47.7,3.74,20.88,35.21,4/4,NO

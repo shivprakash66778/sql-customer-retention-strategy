@@ -1,0 +1,5 @@
+category,total_customers,avg_spend,avg_prev_purchases,avg_promo_dependency,avg_rating,pct_high_value,pct_repeat_buyer,avg_retention_proxy,category_role
+Accessories,1240,59.839,25.726,44.742,3.769,0.342,0.915,44.017,Neutral Category
+Clothing,1737,60.025,25.199,43.588,3.723,0.345,0.917,43.385,Entry Category
+Footwear,599,60.255,25.232,44.498,3.791,0.344,0.918,44.334,Entry Category
+Outerwear,324,57.173,24.957,45.573,3.747,0.293,0.883,43.51,Entry Category

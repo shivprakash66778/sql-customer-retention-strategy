@@ -1,0 +1,43 @@
+column,dtype,source,description
+customer_id,Integer,Raw,Unique customer identifier
+age,Integer,Raw,Customer age in years
+gender,Text,Raw,Male or Female
+item_purchased,Text,Raw,Specific product name
+category,Text,Raw,Clothing / Accessories / Footwear / Outerwear
+purchase_amount,Float,Raw,Single observed transaction value (USD)
+location,Text,Raw,US state of customer
+season,Text,Raw,Season of purchase
+review_rating,Float,Raw,Customer satisfaction score (1.0–5.0)
+subscription_status,Text,Raw,Whether customer has active subscription (Yes/No)
+discount_applied,Text,Raw,Whether a discount was applied (Yes/No)
+promo_code_used,Text,Raw,Whether a promo code was used (Yes/No)
+previous_purchases,Integer,Raw,Count of prior purchases (used as loyalty proxy)
+frequency_of_purchases,Text,Raw,Stated purchase frequency (Weekly/Monthly/etc.)
+payment_method,Text,Raw,Payment method used for this transaction
+preferred_payment_method,Text,Raw,Stated preferred payment method
+discount_applied_flag,Integer,Engineered,"1 if discount applied, else 0"
+promo_code_used_flag,Integer,Engineered,"1 if promo code used, else 0"
+is_subscribed,Integer,Engineered,"1 if subscribed, else 0"
+purchase_freq_annual,Float,Engineered,Annual purchase frequency (numeric conversion of frequency_of_purchases)
+total_spend_est,Float,Engineered,purchase_amount × (previous_purchases + 1) — estimated lifetime spend
+avg_order_value,Float,Engineered,Same as purchase_amount (single observation)
+purchase_count,Integer,Engineered,previous_purchases + 1
+est_annual_spend,Float,Engineered,purchase_amount × purchase_freq_annual
+value_tier,Text,Engineered,"High/Medium/Low based on total_spend_est percentiles (33rd, 66th)"
+promo_usage_rate,Float,Engineered,Average of discount_applied_flag and promo_code_used_flag (0–1)
+promo_dependency_score,Float,Engineered,Weighted promo score 0–100: 40% discount + 40% promo_code + 20% inverse purchase history
+promo_segment,Text,Engineered,Organic Loyalist / Selective Promo User / Promo Dependent / Bargain Hunter (quartile-based)
+satisfaction_tier,Text,Engineered,Dissatisfied (<3.0) / Neutral (3.0–4.0) / Satisfied (≥4.0)
+satisfaction_flag,Integer,Engineered,1 if review_rating ≥ 4.0
+dissatisfied_high_value,Integer,Engineered,1 if value_tier=High AND satisfaction_tier=Dissatisfied
+retention_proxy_score,Float,Engineered,Composite 0–100: 35% prev_purchases + 25% frequency + 20% rating + 10% subscription + 10% low promo. NOT true retention — timestamps absent.
+retention_proxy_tier,Text,Engineered,Low/Medium/High Retention Signal (tercile of retention_proxy_score)
+loyalty_score_1,Float,Engineered,Behavioral loyalty score: 30% purchase_count + 30% total_spend + 20% satisfaction + 20% low promo
+loyalty_def1,Text,Engineered,Low/Medium/High Loyalty (Definition 1: Behavioral)
+loyalty_score_2,Float,Engineered,Commercial loyalty score: 30% spend + 25% AOV + 20% frequency + 15% subscription + 10% no discount
+loyalty_def2,Text,Engineered,Low/Medium/High Loyalty (Definition 2: Commercial)
+loyalty_segment,Text,Engineered,Selected from Behavioral Loyalty (Definition 1) — winner by consistency score 4/4
+geo_opportunity,Text,Engineered,"High/Medium/Low Opportunity based on 5-flag scoring (density, spend, promo, satisfaction, HV share)"
+opportunity_score,Integer,Engineered,0–5 count of favorable geography flags
+purchase_history_tier,Text,Engineered,New (0-5) / Developing (6-15) / Established (16+) based on previous_purchases
+final_segment,Text,Engineered,Actionable customer segment — see segment definitions in README

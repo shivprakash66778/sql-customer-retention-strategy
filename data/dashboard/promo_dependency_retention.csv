@@ -1,0 +1,7 @@
+final_segment,customer_count,avg_promo_dependency,avg_retention_proxy,avg_previous_purchases,avg_loyalty_score,avg_satisfaction,avg_spend,pct_subscribed,pct_organic
+At-Risk Dissatisfied,567,43.905,40.796,31.947,0.439,2.782,64.563,0.268,0.541
+High-Value Promo-Dependent,450,84.946,54.663,37.636,0.515,4.022,76.264,0.662,0.0
+Low-Repeat Bargain Hunter,424,50.85,27.404,3.064,0.248,3.788,60.594,0.224,0.599
+Low-Value Low-Engagement,1303,61.271,39.307,19.156,0.34,3.814,45.784,0.39,0.388
+Loyal High-Value,599,4.825,56.198,37.938,0.723,4.065,76.28,0.0,1.0
+Organic Mid-Value,557,9.345,47.332,26.637,0.554,3.998,55.86,0.0,1.0
