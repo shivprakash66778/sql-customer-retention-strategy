@@ -111,7 +111,7 @@ with col_left:
 # PANEL 2: Promo Dependency vs Retention Proxy
 # ─────────────────────────────────────────────────────────────────────
 with col_right:
-    st.subheader("🎯 Panel 2: Promo Dependency vs. Retention Signal")
+    st.subheader("Panel 2: Promo Dependency vs. Retention Signal")
     st.caption("Top-left = organic loyalists | Bottom-right = deal hunters")
 
     pr = data["promo_ret"].copy()
@@ -272,7 +272,7 @@ with col_right2:
 
 # ── Segment detail expander ────────────────────────────────────────────────
 st.markdown("---")
-with st.expander("📋 Full Segment Summary Table"):
+with st.expander("Full Segment Summary Table"):
     ss = data["seg_sum"].copy()
     st.dataframe(ss[[
         "final_segment","customer_count","revenue_share_pct","avg_purchase_amount",
@@ -285,10 +285,10 @@ with st.expander("📋 Full Segment Summary Table"):
         "avg_review_rating":"Avg Rating","pct_discount_applied":"% Discount"
     }), hide_index=True)
 
-with st.expander("👤 Ideal Customer Profile"):
+with st.expander("Ideal Customer Profile"):
     icp = data["icp"]
     # ---------------- Ideal Customer Profile ----------------
-    st.subheader("👤 Ideal Customer Profile")
+    st.subheader("Ideal Customer Profile")
     
     # Standardize column names to avoid Streamlit Cloud KeyError
     icp.columns = (
